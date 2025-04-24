@@ -1,0 +1,133 @@
+{% extends "subs_manager/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="content">
+    <h1>Аналитика подписчиков</h1>
+    
+    <div class="analytics-container">
+        <div class="chart-container">
+            <canvas id="donutChart"></canvas>
+        </div>
+        
+        <div class="stats-summary">
+            <h2>Общая статистика</h2>
+            <div class="total-followers">
+                Всего подписчиков: <span id="totalFollowers">0</span>
+            </div>
+            <div class="platform-percentages">
+                <!-- Процентные соотношения будут добавлены через JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <div class="back-button">
+        <a href="{% url 'get_real_time_statistics' %}" class="btn">Вернуться на главную</a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const data = {
+        linkedin: {{ linkedin_count }},
+        youtube: {{ youtube_count }},
+        medium: {{ medium_count }},
+        instagram: {{ instagram_count }}
+    };
+
+    // Сортируем данные по убыванию
+    const sortedData = Object.entries(data)
+        .sort(([, a], [, b]) => b - a)
+        .reduce((obj, [key, value]) => {
+            obj[key] = value;
+            return obj;
+        }, {});
+
+    // Создаем пончиковый график
+    const ctx = document.getElementById('donutChart').getContext('2d');
+    const config = {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(sortedData).map(key => key.charAt(0).toUpperCase() + key.slice(1)),
+            datasets: [{
+                data: Object.values(sortedData),
+                backgroundColor: [
+                    '#0077B5', // LinkedIn blue
+                    '#FF0000', // YouTube red
+                    '#00AB6C', // Medium green
+                    '#E4405F'  // Instagram pink
+                ],
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 2000,
+                easing: 'easeInOutQuart'
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 12
+                        },
+                        padding: 15,
+                        boxWidth: 15,
+                        boxHeight: 15
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Распределение подписчиков по платформам',
+                    font: {
+                        size: 18
+                    },
+                    padding: {
+                        bottom: 20
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.raw;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${context.label}: ${percentage}% (${value.toLocaleString('ru-RU')})`;
+                        }
+                    }
+                }
+            },
+            cutout: '60%'
+        }
+    };
+
+    // Создаем график
+    const myChart = new Chart(ctx, config);
+
+    // Обновляем общую статистику
+    const totalFollowers = Object.values(data).reduce((a, b) => a + b, 0);
+    document.getElementById('totalFollowers').textContent = totalFollowers.toLocaleString('ru-RU');
+
+    // Добавляем процентные соотношения
+    const percentagesContainer = document.querySelector('.platform-percentages');
+    Object.entries(sortedData).forEach(([platform, count]) => {
+        const percentage = ((count / totalFollowers) * 100).toFixed(1);
+        const div = document.createElement('div');
+        div.className = `percentage ${platform}`;
+        div.innerHTML = `
+            <span class="platform-name">${platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
+            <div class="stats-info">
+                <span class="platform-percentage">${percentage}%</span>
+                <span class="platform-count">(${count.toLocaleString('ru-RU')})</span>
+            </div>
+        `;
+        percentagesContainer.appendChild(div);
+    });
+});
+</script>
+{% endblock %} 

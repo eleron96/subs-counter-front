@@ -1,0 +1,86 @@
+{% extends "subs_manager/base.html" %}
+{% load static %}
+
+{% block content %}
+    <div class="content">
+        <h1>Статистика в реальном времени</h1>
+        
+        <!-- LinkedIn -->
+        <div id="linkedin-stats" class="stats-card neumorphism-flat">
+            <a href="{% url 'get_daily_statistics' platform='linkedin' %}" class="card-link">
+                <div class="platform-name">LinkedIn</div>
+                <div class="flip-clock" id="linkedin-clock">
+                    <div class="digit">0</div>
+                    <div class="digit">0</div>
+                    <div class="digit">0</div>
+                    <div class="digit">0</div>
+                    <div class="digit">0</div>
+                </div>
+                <p class="timestamp" id="linkedin-last-updated" data-timestamp="{{ linkedin_timestamp }}"></p>
+                <div id="linkedin_count" style="display: none;">{{ linkedin_count }}</div>
+            </a>
+        </div>
+
+        <!-- YouTube -->
+        <div id="youtube-stats" class="stats-card neumorphism-flat">
+            <a href="{% url 'get_daily_statistics' platform='youtube' %}" class="card-link">
+                <div class="platform-name">YouTube</div>
+                <div class="flip-clock" id="youtube-clock">
+                    <div class="digit">0</div>
+                    <div class="digit">0</div>
+                    <div class="digit">0</div>
+                    <div class="digit">0</div>
+                    <div class="digit">0</div>
+                </div>
+                <p class="timestamp" id="youtube-last-updated" data-timestamp="{{ youtube_timestamp }}"></p>
+                <div id="youtube_count" style="display: none;">{{ youtube_count }}</div>
+            </a>
+        </div>
+
+        <!-- Medium -->
+        <div id="medium-stats" class="stats-card neumorphism-flat">
+            <a href="{% url 'get_daily_statistics' platform='medium' %}" class="card-link">
+                <div class="platform-name">Medium</div>
+                <div class="flip-clock" id="medium-clock">
+                    <div class="digit">0</div>
+                    <div class="digit">0</div>
+                    <div class="digit">0</div>
+                    <div class="digit">0</div>
+                    <div class="digit">0</div>
+                </div>
+                <p class="timestamp" id="medium-last-updated" data-timestamp="{{ medium_timestamp }}"></p>
+                <div id="medium_count" style="display: none;">{{ medium_count }}</div>
+            </a>
+        </div>
+
+        <!-- Instagram -->
+        <div id="instagram-stats" class="stats-card neumorphism-flat">
+            <a href="{% url 'get_daily_statistics' platform='instagram' %}" class="card-link">
+                <div class="platform-name">Instagram</div>
+                <div class="flip-clock" id="instagram-clock">
+                    <div class="digit">0</div>
+                    <div class="digit">0</div>
+                    <div class="digit">0</div>
+                    <div class="digit">0</div>
+                    <div class="digit">0</div>
+                </div>
+                <p class="timestamp" id="instagram-last-updated" data-timestamp="{{ instagram_timestamp }}"></p>
+                <div id="instagram_count" style="display: none;">{{ instagram_count }}</div>
+            </a>
+        </div>
+
+        <!-- Analytics -->
+        <div class="analytics-card">
+            <a href="{% url 'get_analytics' %}" class="analytics-content">
+                <div class="analytics-icon">📊</div>
+                <div class="analytics-text">
+                    <h3>Анализ распределения подписчиков</h3>
+                    <p>Сравните количество подписчиков на разных платформах</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <script src="{% static 'js/scripts.js' %}"></script>
+{% endblock %}
+

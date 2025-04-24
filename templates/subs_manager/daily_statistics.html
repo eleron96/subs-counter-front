@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ platform }} Daily Statistics</title>
+    {% load static %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="icon" href="data:," />
+</head>
+<body>
+    <div class="content">
+        <h1>{{ platform }} Daily Statistics</h1>
+
+        <!-- Увеличиваем размер графика -->
+        <canvas id="statsChart" width="1000" height="500"></canvas>
+
+        <div class="last-updated-time">
+            <a href="{% url 'get_real_time_statistics' %}" class="card-link">Back to Real-time Stats</a>
+        </div>
+    </div>
+
+<script>
+    const dailyStats = {{ daily_stats|safe }};
+    
+    // Преобразуем даты в объекты Date
+    const chartData = dailyStats.map(stat => ({
+        x: new Date(stat.date),
+        y: stat.followers_count || stat.subscribers_count
+    }));
+
+    // Создание графика Chart.js
+    const ctx = document.getElementById('statsChart').getContext('2d');
+    const statsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            datasets: [{
+                label: '{{ platform }} Followers Count',
+                data: chartData,
+                borderColor: '#4A90E2',
+                backgroundColor: 'rgba(74, 144, 226, 0.2)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 6,
+                pointBackgroundColor: '#4A90E2',
+                pointBorderColor: '#FFFFFF',
+                pointBorderWidth: 2,
+                pointHoverBackgroundColor: '#FFFFFF',
+                pointHoverBorderColor: '#4A90E2',
+                pointHoverRadius: 8,
+                pointHoverBorderWidth: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: '{{ platform }} Daily Followers Count',
+                    font: {
+                        size: 16
+                    }
+                },
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    enabled: true,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    padding: 12,
+                    displayColors: false,
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            const date = new Date(tooltipItems[0].raw.x);
+                            return date.toLocaleDateString('ru-RU', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            });
+                        },
+                        label: function(context) {
+                            return `Подписчиков: ${context.raw.y.toLocaleString('ru-RU')}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'time',
+                    time: {
+                        unit: 'day',
+                        displayFormats: {
+                            day: 'dd.MM.yy'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Дата'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Количество подписчиков'
+                    },
+                    suggestedMin: Math.min(...chartData.map(d => d.y)) - 10,
+                    suggestedMax: Math.max(...chartData.map(d => d.y)) + 10
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

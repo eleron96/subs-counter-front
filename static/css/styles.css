@@ -1,0 +1,384 @@
+/* ==========================================================================
+   Основные стили и типография
+   ========================================================================== */
+body {
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #F8F9FA; /* Светло-серый фон */
+    color: #2D3436; /* Темно-серый текст */
+}
+
+.content {
+    text-align: center;
+    padding: 20px;
+}
+
+h1 {
+    font-size: 36px;
+    margin-bottom: 30px;
+    font-weight: bold;
+    color: #2D3436; /* Темно-серый */
+}
+
+.timestamp {
+    font-size: 1rem;
+    color: #6C757D; /* Пастельный серый для времени */
+}
+
+/* ==========================================================================
+   Компоненты главной страницы
+   ========================================================================== */
+
+/* Карточки статистики */
+.stats-card {
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: inline-block;
+    text-align: center;
+    width: 250px;
+    background-color: white;
+    transition: transform 0.2s ease;
+}
+
+/* Стили для конкретных платформ */
+#linkedin-stats,
+#youtube-stats,
+#medium-stats {
+    background-color: white;
+}
+
+#instagram-stats {
+    background-color: #f8f9fa;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Названия платформ */
+.platform-name {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    color: #2D3436; /* Белый для названий платформ */
+}
+
+/* Часы и временные метки */
+.flip-clock {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin: 20px 0;
+}
+
+.digit {
+    width: 40px;
+    height: 60px;
+    background: #fff;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.5s;
+    position: relative;
+    perspective: 400px;
+}
+
+.digit.flip {
+    animation: flip 0.5s ease-in-out;
+}
+
+@keyframes flip {
+    0% {
+        transform: rotateX(0);
+    }
+    50% {
+        transform: rotateX(90deg);
+    }
+    100% {
+        transform: rotateX(0);
+    }
+}
+
+/* Мелкий шрифт для времени последнего обновления */
+.last-updated-time {
+    font-size: 0.8rem;
+    color: #6C757D; /* Пастельный серый для последнего обновления */
+    margin-top: 10px;
+    font-style: italic;
+}
+
+.stats-card .important-number {
+    color: #4A90E2;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.card-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Дополнительные стили для улучшения визуала */
+.stats-card .important-number:hover {
+    color: #357ABD;
+}
+
+/* Стили для блока аналитики */
+.analytics-card {
+    margin: 0;
+    padding: 0.3rem;
+    border-radius: 15px;
+    background: white;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    width: 300px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.analytics-card:hover {
+    transform: translateX(-50%) translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.analytics-content {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    text-decoration: none;
+    color: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    width: 100%;
+}
+
+.analytics-icon {
+    font-size: 0.8rem;
+    background: white;
+    width: 15px;
+    height: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.analytics-text h3 {
+    margin: 0;
+    color: #2D3436;
+    font-size: 0.65rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.analytics-text p {
+    margin: 0;
+    color: #666;
+    font-size: 0.55rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   Страница аналитики - Основной layout
+   ========================================================================== */
+.analytics-container {
+    display: flex;
+    gap: 2rem;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* График */
+.chart-container {
+    flex: 2;
+    height: 300px;
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.95);
+    animation: fadeInScale 0.6s ease-out forwards;
+}
+
+@keyframes fadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.chart-container canvas {
+    max-width: 80%;
+    max-height: 80%;
+}
+
+/* Блок статистики */
+.stats-summary {
+    flex: 1;
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.8s ease-out 1s forwards;
+}
+
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stats-summary h2 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: #2D3436;
+    text-align: center; /* Центрируем заголовок */
+}
+
+.total-followers {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid #eee;
+    text-align: center; /* Центрируем общее количество */
+}
+
+/* ==========================================================================
+   Страница аналитики - Список платформ
+   ========================================================================== */
+.platform-percentages {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.platform-percentages div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    background: #f8f9fa;
+    height: 24px; /* Фиксированная высота для выравнивания */
+}
+
+.platform-name {
+    font-weight: bold;
+    font-size: 0.75rem;
+    line-height: 1; /* Убираем лишнее пространство вокруг текста */
+    margin: 0; /* Убираем отступы */
+}
+
+.platform-percentage {
+    color: #666;
+    font-size: 0.7rem;
+    line-height: 1;
+    margin: 0; /* Убираем отступы */
+}
+
+.platform-count {
+    color: #888;
+    font-size: 0.7rem;
+    line-height: 1;
+    margin: 0; /* Убираем отступы */
+}
+
+.stats-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0; /* Убираем отступы */
+}
+
+.back-button {
+    text-align: center;
+    margin-top: 2rem;
+}
+
+/* ==========================================================================
+   Общие компоненты
+   ========================================================================== */
+/* Кнопки */
+.btn {
+    display: inline-block;
+    padding: 0.8rem 1.5rem;
+    background: #4A90E2;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background 0.3s;
+}
+
+.btn:hover {
+    background: #357ABD;
+}
+
+/* Neumorphism */
+.neumorphism-flat {
+    border-radius: 50px;
+    background-color: #e0e0e0;
+    box-shadow: 20px 20px 60px #bebebe,
+                -20px -20px 60px #ffffff;
+}
+
+/* ==========================================================================
+   Медиа-запросы
+   ========================================================================== */
+@media (max-width: 768px) {
+    .analytics-container {
+        flex-direction: column;
+    }
+    
+    .chart-container {
+        height: 400px;
+    }
+    
+    .analytics-card {
+        margin: 1.5rem 1rem;
+    }
+    
+    .analytics-content {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .analytics-text h3 {
+        font-size: 1.2rem;
+    }
+}

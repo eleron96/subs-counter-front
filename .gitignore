@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+
+# Virtualenv
+.venv/
+
+# Poetry artifacts (если есть лишние файлы)
+poetry 2.lock
+db 2.sqlite3
+
+# OS files
+.DS_Store
