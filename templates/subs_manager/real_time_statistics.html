@@ -6,7 +6,7 @@
         <h1>Статистика в реальном времени</h1>
         
         <!-- LinkedIn -->
-        <div id="linkedin-stats" class="stats-card neumorphism-flat">
+        <div id="linkedin-stats" class="stats-card">
             <a href="{% url 'get_daily_statistics' platform='linkedin' %}" class="card-link">
                 <div class="platform-name">LinkedIn</div>
                 <div class="flip-clock" id="linkedin-clock">
@@ -22,7 +22,7 @@
         </div>
 
         <!-- YouTube -->
-        <div id="youtube-stats" class="stats-card neumorphism-flat">
+        <div id="youtube-stats" class="stats-card">
             <a href="{% url 'get_daily_statistics' platform='youtube' %}" class="card-link">
                 <div class="platform-name">YouTube</div>
                 <div class="flip-clock" id="youtube-clock">
@@ -38,7 +38,7 @@
         </div>
 
         <!-- Medium -->
-        <div id="medium-stats" class="stats-card neumorphism-flat">
+        <div id="medium-stats" class="stats-card">
             <a href="{% url 'get_daily_statistics' platform='medium' %}" class="card-link">
                 <div class="platform-name">Medium</div>
                 <div class="flip-clock" id="medium-clock">
@@ -54,7 +54,7 @@
         </div>
 
         <!-- Instagram -->
-        <div id="instagram-stats" class="stats-card neumorphism-flat">
+        <div id="instagram-stats" class="stats-card">
             <a href="{% url 'get_daily_statistics' platform='instagram' %}" class="card-link">
                 <div class="platform-name">Instagram</div>
                 <div class="flip-clock" id="instagram-clock">
@@ -81,6 +81,33 @@
         </div>
     </div>
 
-    <script src="{% static 'js/scripts.js' %}"></script>
+    <script type="module">
+        import { COUNTER_CONFIG } from "{% static 'js/config.js' %}";
+        import { animateCounter, formatDate, handleError } from "{% static 'js/utils.js' %}";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                // Анимируем счетчики
+                const platforms = ['linkedin', 'youtube', 'medium', 'instagram'];
+                platforms.forEach((platform, index) => {
+                    const count = parseInt(document.getElementById(`${platform}_count`).textContent.replace(/,/g, ''), 10) || 0;
+                    const clock = document.getElementById(`${platform}-clock`);
+                    
+                    // Добавляем задержку для последовательной анимации
+                    setTimeout(() => {
+                        animateCounter(clock, count, COUNTER_CONFIG);
+                    }, index * 200);
+                });
+
+                // Форматируем даты
+                platforms.forEach(platform => {
+                    const timestamp = document.getElementById(`${platform}-last-updated`).dataset.timestamp;
+                    document.getElementById(`${platform}-last-updated`).textContent = formatDate(timestamp);
+                });
+            } catch (error) {
+                handleError(error, document.querySelector('.content'));
+            }
+        });
+    </script>
 {% endblock %}
 

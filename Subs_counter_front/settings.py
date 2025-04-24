@@ -147,3 +147,14 @@ LOGGING = {
     },
 }
 
+# Настройки кэширования
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
+# Время жизни кэша по умолчанию (в секундах)
+CACHE_MIDDLEWARE_SECONDS = 60 * 15  # 15 минут
+

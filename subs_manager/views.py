@@ -3,8 +3,12 @@ import requests
 from django.shortcuts import render
 from django.core.exceptions import ValidationError
 from requests.exceptions import RequestException, Timeout
+from django.views.decorators.cache import cache_page
+from django.core.cache import cache
 import json
 from typing import Dict, Any, Union
+from functools import wraps
+import time
 
 # Настроим логгер
 logger = logging.getLogger(__name__)
@@ -12,23 +16,44 @@ logger = logging.getLogger(__name__)
 # Константы
 API_TIMEOUT = 5  # секунды
 API_BASE_URL = "http://194.35.119.49:8090"
+CACHE_TIMEOUT = 60 * 15  # 15 минут
 
-# Валидация параметров
-def validate_platform(platform: str) -> None:
-    """Проверяет корректность названия платформы."""
-    valid_platforms = ["linkedin", "youtube", "medium", "instagram"]
-    if platform.lower() not in valid_platforms:
-        raise ValidationError(f"Недопустимая платформа: {platform}")
+def cache_api_response(timeout: int = CACHE_TIMEOUT):
+    """
+    Декоратор для кэширования ответов API.
+    
+    Args:
+        timeout: Время жизни кэша в секундах
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Создаем ключ кэша на основе аргументов функции
+            cache_key = f"api_response_{func.__name__}_{str(args)}_{str(kwargs)}"
+            
+            # Пробуем получить данные из кэша
+            cached_data = cache.get(cache_key)
+            if cached_data is not None:
+                logger.debug(f"Получены данные из кэша для {cache_key}")
+                return cached_data
+            
+            # Если данных нет в кэше, получаем их от API
+            try:
+                data = func(*args, **kwargs)
+                # Сохраняем в кэш
+                cache.set(cache_key, data, timeout)
+                logger.debug(f"Данные сохранены в кэш для {cache_key}")
+                return data
+            except Exception as e:
+                logger.error(f"Ошибка при получении данных: {str(e)}")
+                raise
+        return wrapper
+    return decorator
 
-def validate_profile_id(platform: str, profile_id: str) -> None:
-    """Проверяет корректность ID профиля для каждой платформы."""
-    if not profile_id or not isinstance(profile_id, str):
-        raise ValidationError(f"Некорректный ID профиля для {platform}")
-
-# Получение данных от API
+@cache_api_response()
 def fetch_api_data(url: str) -> Dict[str, Any]:
     """
-    Безопасное получение данных от API с обработкой ошибок.
+    Безопасное получение данных от API с обработкой ошибок и кэшированием.
     
     Args:
         url: URL для запроса
@@ -43,7 +68,7 @@ def fetch_api_data(url: str) -> Dict[str, Any]:
     """
     try:
         response = requests.get(url, timeout=API_TIMEOUT)
-        response.raise_for_status()  # Проверяем статус ответа
+        response.raise_for_status()
         return response.json()
     except Timeout:
         logger.error(f"Timeout при запросе к {url}")
@@ -55,6 +80,18 @@ def fetch_api_data(url: str) -> Dict[str, Any]:
         logger.error(f"Некорректный JSON в ответе от {url}: {str(e)}")
         raise
 
+def validate_platform(platform: str) -> None:
+    """Проверяет корректность названия платформы."""
+    valid_platforms = ["linkedin", "youtube", "medium", "instagram"]
+    if platform.lower() not in valid_platforms:
+        raise ValidationError(f"Недопустимая платформа: {platform}")
+
+def validate_profile_id(platform: str, profile_id: str) -> None:
+    """Проверяет корректность ID профиля для каждой платформы."""
+    if not profile_id or not isinstance(profile_id, str):
+        raise ValidationError(f"Некорректный ID профиля для {platform}")
+
+@cache_page(CACHE_TIMEOUT)
 def get_daily_statistics(request, platform: str) -> Any:
     """Получение ежедневной статистики для указанной платформы."""
     try:
@@ -131,6 +168,7 @@ def get_daily_statistics(request, platform: str) -> Any:
             'message': f'Ошибка при получении данных: {str(e)}'
         })
 
+@cache_page(CACHE_TIMEOUT)
 def get_real_time_statistics(request) -> Any:
     """Получение статистики в реальном времени для всех платформ."""
     try:
@@ -157,6 +195,7 @@ def get_real_time_statistics(request) -> Any:
             'message': f'Ошибка при получении данных: {str(e)}'
         })
 
+@cache_page(CACHE_TIMEOUT)
 def get_analytics(request) -> Any:
     """Получение аналитики по всем платформам."""
     try:
