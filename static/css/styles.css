@@ -438,3 +438,35 @@ h1 {
         box-shadow: 0 0 0 0 rgba(74, 144, 226, 0);
     }
 }
+
+/* ==========================================================================
+   Переключатель языка
+   ========================================================================== */
+.language-switcher {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.language-switcher select {
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background-color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    color: #2D3436;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.language-switcher select:hover {
+    border-color: #4A90E2;
+}
+
+.language-switcher select:focus {
+    border-color: #4A90E2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}

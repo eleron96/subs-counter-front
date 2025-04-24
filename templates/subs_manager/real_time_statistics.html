@@ -1,10 +1,11 @@
 {% extends "subs_manager/base.html" %}
 {% load static %}
+{% load i18n %}
 
 {% block content %}
     <div class="content page-transition">
         <div class="loading-spinner"></div>
-        <h1>Статистика в реальном времени</h1>
+        <h1>{% trans "Статистика в реальном времени" %}</h1>
         
         <!-- LinkedIn -->
         <div id="linkedin-stats" class="stats-card">
@@ -75,8 +76,8 @@
             <a href="{% url 'get_analytics' %}" class="analytics-content">
                 <div class="analytics-icon">📊</div>
                 <div class="analytics-text">
-                    <h3>Анализ распределения подписчиков</h3>
-                    <p>Сравните количество подписчиков на разных платформах</p>
+                    <h3>{% trans "Анализ распределения подписчиков" %}</h3>
+                    <p>{% trans "Сравните количество подписчиков на разных платформах" %}</p>
                 </div>
             </a>
         </div>

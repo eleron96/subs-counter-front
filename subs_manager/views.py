@@ -11,6 +11,7 @@ from functools import wraps
 import time
 from django.http import JsonResponse
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 # Настроим логгер для отслеживания ошибок и важных событий
 logger = logging.getLogger(__name__)
@@ -116,7 +117,7 @@ def validate_platform(platform: str) -> None:
     """
     valid_platforms = ["linkedin", "youtube", "medium", "instagram"]
     if platform.lower() not in valid_platforms:
-        raise ValidationError(f"Недопустимая платформа: {platform}")
+        raise ValidationError(_(f"Недопустимая платформа: {platform}"))
 
 def validate_profile_id(platform: str, profile_id: str) -> None:
     """
@@ -130,7 +131,7 @@ def validate_profile_id(platform: str, profile_id: str) -> None:
         ValidationError: если ID профиля некорректен
     """
     if not profile_id or not isinstance(profile_id, str):
-        raise ValidationError(f"Некорректный ID профиля для {platform}")
+        raise ValidationError(_(f"Некорректный ID профиля для {platform}"))
 
 @cache_page(CACHE_TIMEOUT)
 def get_daily_statistics(request, platform: str) -> Any:
@@ -222,7 +223,7 @@ def get_daily_statistics(request, platform: str) -> Any:
     except (ValidationError, RequestException, Timeout, ValueError) as e:
         logger.error(f"Ошибка при получении статистики для {platform}: {str(e)}")
         return render(request, 'subs_manager/error.html', {
-            'message': f'Ошибка при получении данных: {str(e)}'
+            'message': _('Ошибка при получении данных: {}').format(str(e))
         })
 
 @cache_page(CACHE_TIMEOUT)
@@ -256,8 +257,8 @@ def get_real_time_statistics(request) -> Any:
         stats = {}
         for platform, data in platforms_data.items():
             latest_data = data.get('latest_data', {})
-            stats[f'{platform}_count'] = latest_data.get('count', 'Не удалось получить данные')
-            stats[f'{platform}_timestamp'] = latest_data.get('timestamp', 'Не удалось получить данные')
+            stats[f'{platform}_count'] = latest_data.get('count', _('Не удалось получить данные'))
+            stats[f'{platform}_timestamp'] = latest_data.get('timestamp', _('Не удалось получить данные'))
 
         return render(request, 'subs_manager/real_time_statistics.html', stats)
 
