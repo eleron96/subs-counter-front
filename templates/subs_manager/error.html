@@ -1,0 +1,11 @@
+{% extends "subs_manager/base.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-icon">⚠️</div>
+    <h1>{% trans "Произошла ошибка" %}</h1>
+    <p class="error-message">{{ message }}</p>
+    <a href="{% url 'home' %}" class="btn">{% trans "Вернуться на главную" %}</a>
+</div>
+{% endblock %} 

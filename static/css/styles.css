@@ -470,3 +470,24 @@ h1 {
     border-color: #4A90E2;
     box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
+
+/* ==========================================================================
+   Страница ошибки
+   ========================================================================== */
+.error-container {
+    text-align: center;
+    padding: 2rem;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.error-message {
+    color: #666;
+    margin: 1rem 0 2rem;
+    line-height: 1.5;
+}

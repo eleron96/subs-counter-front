@@ -17,7 +17,8 @@ from django.utils.translation import gettext as _
 logger = logging.getLogger(__name__)
 
 # Константы для настройки приложения
-API_TIMEOUT = 5  # секунды
+API_TIMEOUT = 15  # увеличиваем таймаут до 15 секунд
+API_MAX_RETRIES = 3  # максимальное количество попыток
 API_BASE_URL = "http://194.35.119.49:8090"
 CACHE_TIMEOUT = 60 * 15  # 15 минут
 
@@ -65,7 +66,6 @@ def cache_api_response(timeout: int = CACHE_TIMEOUT):
         return wrapper
     return decorator
 
-@cache_api_response()
 def fetch_api_data(url: str) -> Dict[str, Any]:
     """
     Безопасное получение данных от API с обработкой ошибок и кэшированием.
@@ -91,19 +91,23 @@ def fetch_api_data(url: str) -> Dict[str, Any]:
         except RequestException as e:
             handle_error(e)
     """
-    try:
-        response = requests.get(url, timeout=API_TIMEOUT)
-        response.raise_for_status()
-        return response.json()
-    except Timeout:
-        logger.error(f"Timeout при запросе к {url}")
-        raise
-    except RequestException as e:
-        logger.error(f"Ошибка при запросе к {url}: {str(e)}")
-        raise
-    except ValueError as e:
-        logger.error(f"Некорректный JSON в ответе от {url}: {str(e)}")
-        raise
+    for attempt in range(API_MAX_RETRIES):
+        try:
+            response = requests.get(url, timeout=API_TIMEOUT)
+            response.raise_for_status()
+            return response.json()
+        except Timeout:
+            if attempt == API_MAX_RETRIES - 1:
+                logger.error(f"Timeout при запросе к {url} после {API_MAX_RETRIES} попыток")
+                raise
+            logger.warning(f"Timeout при запросе к {url}, попытка {attempt + 1} из {API_MAX_RETRIES}")
+            time.sleep(1)  # Ждем секунду перед повторной попыткой
+        except RequestException as e:
+            if attempt == API_MAX_RETRIES - 1:
+                logger.error(f"Ошибка при запросе к {url}: {str(e)}")
+                raise
+            logger.warning(f"Ошибка при запросе к {url}, попытка {attempt + 1} из {API_MAX_RETRIES}")
+            time.sleep(1)
 
 def validate_platform(platform: str) -> None:
     """
