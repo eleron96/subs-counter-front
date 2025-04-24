@@ -141,7 +141,9 @@ def validate_profile_id(platform: str, profile_id: str) -> None:
 
 def calculate_trend_prediction(daily_stats: list, days_ahead: int = 2) -> list:
     """
-    Рассчитывает прогноз на основе линейной регрессии.
+    Рассчитывает прогноз на основе комбинации методов:
+    1. Полиномиальная регрессия 2-й степени для определения тренда
+    2. Экспоненциальное сглаживание для учета последних изменений
     
     Args:
         daily_stats: список словарей с данными за последние дни
@@ -150,28 +152,54 @@ def calculate_trend_prediction(daily_stats: list, days_ahead: int = 2) -> list:
     Returns:
         list: список предсказанных значений с датами
     """
-    if len(daily_stats) < 2:
+    if len(daily_stats) < 5:  # Нужно минимум 5 точек для надежного прогноза
         return []
         
     # Берем только последние 30 дней для прогноза
     recent_stats = daily_stats[-30:] if len(daily_stats) > 30 else daily_stats
     
-    # Подготовка данных для регрессии
+    # Подготовка данных
     dates = [datetime.strptime(stat['date'], '%Y-%m-%d') for stat in recent_stats]
     days_nums = [(date - dates[0]).days for date in dates]
     counts = [stat.get('followers_count', stat.get('subscribers_count', 0)) for stat in recent_stats]
     
-    # Линейная регрессия
-    coeffs = np.polyfit(days_nums, counts, 1)
-    poly = np.poly1d(coeffs)
+    # Полиномиальная регрессия 2-й степени
+    poly_coeffs = np.polyfit(days_nums, counts, 2)
+    poly = np.poly1d(poly_coeffs)
     
-    # Расчет прогноза
+    # Экспоненциальное сглаживание для определения краткосрочного тренда
+    alpha = 0.3  # Коэффициент сглаживания
+    exp_smooth = counts[-1]  # Последнее известное значение
+    last_changes = []
+    
+    # Рассчитываем последние изменения с экспоненциальным сглаживанием
+    for i in range(len(counts)-1):
+        change = counts[i+1] - counts[i]
+        if not last_changes:
+            last_changes.append(change)
+        else:
+            smoothed_change = alpha * change + (1 - alpha) * last_changes[-1]
+            last_changes.append(smoothed_change)
+    
+    # Среднее изменение за последние дни с учетом сглаживания
+    recent_trend = np.mean(last_changes[-5:]) if len(last_changes) >= 5 else last_changes[-1]
+    
+    # Расчет прогноза как комбинации полиномиальной регрессии и последнего тренда
     predictions = []
     last_date = dates[-1]
+    last_count = counts[-1]
+    
     for i in range(1, days_ahead + 1):
         future_date = last_date + timedelta(days=i)
         future_days = (future_date - dates[0]).days
-        predicted_count = int(poly(future_days))
+        
+        # Комбинируем полиномиальный прогноз с трендом
+        poly_pred = poly(future_days)
+        trend_pred = last_count + (recent_trend * i)
+        
+        # Взвешенная комбинация (70% полиномиальный прогноз, 30% линейный тренд)
+        predicted_count = int(0.7 * poly_pred + 0.3 * trend_pred)
+        
         predictions.append({
             'date': future_date.strftime('%Y-%m-%d'),
             'predicted_count': predicted_count
