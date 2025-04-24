@@ -24,6 +24,7 @@
 
 <script>
     const dailyStats = {{ daily_stats|safe }};
+    const predictions = {{ predictions|safe }};
     
     // Преобразуем даты в объекты Date
     const chartData = dailyStats.map(stat => ({
@@ -31,34 +32,59 @@
         y: stat.followers_count || stat.subscribers_count
     }));
 
+    // Преобразуем прогноз, начиная только с последней реальной точки
+    const lastRealData = chartData[chartData.length - 1];
+    const predictionData = predictions.map(pred => ({
+        x: new Date(pred.date),
+        y: pred.predicted_count
+    }));
+
     // Создание графика Chart.js
     const ctx = document.getElementById('statsChart').getContext('2d');
     const statsChart = new Chart(ctx, {
         type: 'line',
         data: {
-            datasets: [{
-                label: '{{ platform }} Followers Count',
-                data: chartData,
-                borderColor: '#4A90E2',
-                backgroundColor: 'rgba(74, 144, 226, 0.2)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 6,
-                pointBackgroundColor: '#4A90E2',
-                pointBorderColor: '#FFFFFF',
-                pointBorderWidth: 2,
-                pointHoverBackgroundColor: '#FFFFFF',
-                pointHoverBorderColor: '#4A90E2',
-                pointHoverRadius: 8,
-                pointHoverBorderWidth: 3
-            }]
+            datasets: [
+                {
+                    label: '{{ platform }} Followers Count',
+                    data: chartData,
+                    borderColor: '#4A90E2',
+                    backgroundColor: 'rgba(74, 144, 226, 0.2)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointBackgroundColor: '#4A90E2',
+                    pointBorderColor: '#FFFFFF',
+                    pointBorderWidth: 2,
+                    pointHoverBackgroundColor: '#FFFFFF',
+                    pointHoverBorderColor: '#4A90E2',
+                    pointHoverRadius: 8,
+                    pointHoverBorderWidth: 3
+                },
+                {
+                    label: 'Прогноз',
+                    data: [{
+                        x: lastRealData.x,
+                        y: lastRealData.y
+                    }, ...predictionData],
+                    borderColor: '#808080',  // Серый цвет
+                    borderDash: [5, 5],
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointStyle: 'circle',
+                    pointBackgroundColor: 'rgba(128, 128, 128, 0.5)',  // Полупрозрачный серый
+                    fill: false,
+                    tension: 0
+                }
+            ]
         },
         options: {
             responsive: true,
             interaction: {
-                mode: 'index',
-                intersect: false
+                mode: 'point',
+                intersect: true,
+                axis: 'x'
             },
             plugins: {
                 title: {
@@ -69,7 +95,8 @@
                     }
                 },
                 legend: {
-                    display: false
+                    display: true,
+                    position: 'top'
                 },
                 tooltip: {
                     enabled: true,
@@ -78,6 +105,7 @@
                     bodyColor: '#fff',
                     padding: 12,
                     displayColors: false,
+                    position: 'nearest',
                     callbacks: {
                         title: function(tooltipItems) {
                             const date = new Date(tooltipItems[0].raw.x);
@@ -88,7 +116,13 @@
                             });
                         },
                         label: function(context) {
-                            return `Подписчиков: ${context.raw.y.toLocaleString('ru-RU')}`;
+                            const date = new Date(context.raw.x);
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            
+                            // Показываем метку "Прогноз" только для будущих дат
+                            const label = date > today ? 'Прогноз: ' : 'Подписчиков: ';
+                            return label + context.raw.y.toLocaleString('ru-RU');
                         }
                     }
                 }
@@ -112,8 +146,8 @@
                         display: true,
                         text: 'Количество подписчиков'
                     },
-                    suggestedMin: Math.min(...chartData.map(d => d.y)) - 10,
-                    suggestedMax: Math.max(...chartData.map(d => d.y)) + 10
+                    suggestedMin: Math.min(...chartData.map(d => d.y), ...predictionData.map(d => d.y)) - 10,
+                    suggestedMax: Math.max(...chartData.map(d => d.y), ...predictionData.map(d => d.y)) + 10
                 }
             }
         }

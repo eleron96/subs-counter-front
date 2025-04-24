@@ -12,6 +12,8 @@ import time
 from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.translation import gettext as _
+import numpy as np
+from datetime import datetime, timedelta
 
 # Настроим логгер для отслеживания ошибок и важных событий
 logger = logging.getLogger(__name__)
@@ -137,6 +139,46 @@ def validate_profile_id(platform: str, profile_id: str) -> None:
     if not profile_id or not isinstance(profile_id, str):
         raise ValidationError(_(f"Некорректный ID профиля для {platform}"))
 
+def calculate_trend_prediction(daily_stats: list, days_ahead: int = 2) -> list:
+    """
+    Рассчитывает прогноз на основе линейной регрессии.
+    
+    Args:
+        daily_stats: список словарей с данными за последние дни
+        days_ahead: на сколько дней вперед делать прогноз
+        
+    Returns:
+        list: список предсказанных значений с датами
+    """
+    if len(daily_stats) < 2:
+        return []
+        
+    # Берем только последние 30 дней для прогноза
+    recent_stats = daily_stats[-30:] if len(daily_stats) > 30 else daily_stats
+    
+    # Подготовка данных для регрессии
+    dates = [datetime.strptime(stat['date'], '%Y-%m-%d') for stat in recent_stats]
+    days_nums = [(date - dates[0]).days for date in dates]
+    counts = [stat.get('followers_count', stat.get('subscribers_count', 0)) for stat in recent_stats]
+    
+    # Линейная регрессия
+    coeffs = np.polyfit(days_nums, counts, 1)
+    poly = np.poly1d(coeffs)
+    
+    # Расчет прогноза
+    predictions = []
+    last_date = dates[-1]
+    for i in range(1, days_ahead + 1):
+        future_date = last_date + timedelta(days=i)
+        future_days = (future_date - dates[0]).days
+        predicted_count = int(poly(future_days))
+        predictions.append({
+            'date': future_date.strftime('%Y-%m-%d'),
+            'predicted_count': predicted_count
+        })
+    
+    return predictions
+
 @cache_page(CACHE_TIMEOUT)
 def get_daily_statistics(request, platform: str) -> Any:
     """
@@ -219,9 +261,13 @@ def get_daily_statistics(request, platform: str) -> Any:
                 for stat in daily_stats
             ]
 
+        # Рассчитываем прогноз
+        predictions = calculate_trend_prediction(daily_stats)
+
         return render(request, 'subs_manager/daily_statistics.html', {
             'platform': platform.capitalize(),
             'daily_stats': daily_stats,
+            'predictions': predictions,
         })
 
     except (ValidationError, RequestException, Timeout, ValueError) as e:
