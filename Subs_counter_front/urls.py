@@ -8,4 +8,5 @@ urlpatterns = [
     path('', views.get_real_time_statistics, name='home'),
     path('statistics/daily/<str:platform>/', views.get_daily_statistics, name='get_daily_statistics'),  # Новый путь для статистики
     path('analytics/', views.get_analytics, name='get_analytics'),  # Новый путь для аналитики
+    path('update-statistics/', views.update_statistics, name='update_statistics'),  # Новый маршрут для обновления данных
 ]

@@ -2,7 +2,8 @@
 {% load static %}
 
 {% block content %}
-    <div class="content">
+    <div class="content page-transition">
+        <div class="loading-spinner"></div>
         <h1>Статистика в реальном времени</h1>
         
         <!-- LinkedIn -->
@@ -87,13 +88,22 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             try {
-                // Анимируем счетчики
+                const content = document.querySelector('.content');
+                
+                // Добавляем обработчик события beforeunload для показа индикатора загрузки
+                window.addEventListener('beforeunload', () => {
+                    content.classList.add('loading');
+                    document.querySelectorAll('.stats-card').forEach(card => {
+                        card.classList.add('updating');
+                    });
+                });
+
+                // Инициализация начальных данных
                 const platforms = ['linkedin', 'youtube', 'medium', 'instagram'];
                 platforms.forEach((platform, index) => {
                     const count = parseInt(document.getElementById(`${platform}_count`).textContent.replace(/,/g, ''), 10) || 0;
                     const clock = document.getElementById(`${platform}-clock`);
                     
-                    // Добавляем задержку для последовательной анимации
                     setTimeout(() => {
                         animateCounter(clock, count, COUNTER_CONFIG);
                     }, index * 200);

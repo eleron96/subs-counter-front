@@ -9,6 +9,8 @@ import json
 from typing import Dict, Any, Union
 from functools import wraps
 import time
+from django.http import JsonResponse
+from django.utils import timezone
 
 # Настроим логгер
 logger = logging.getLogger(__name__)
@@ -221,3 +223,36 @@ def get_analytics(request) -> Any:
         return render(request, 'subs_manager/error.html', {
             'message': f'Ошибка при получении данных: {str(e)}'
         })
+
+def update_statistics(request):
+    """Обработчик для обновления статистики."""
+    try:
+        # Получаем данные для всех платформ
+        platforms_data = {
+            'linkedin': fetch_api_data(f"{API_BASE_URL}/linkedin/latest?profile_id=gamsakhurdiya"),
+            'youtube': fetch_api_data(f"{API_BASE_URL}/youtube/latest?channel_id=UCRhID0powzDpE4D2KuVKGHg"),
+            'medium': fetch_api_data(f"{API_BASE_URL}/medium/latest?username=Eleron"),
+            'instagram': fetch_api_data(f"{API_BASE_URL}/instagram/latest?username=nikog_bim")
+        }
+
+        # Формируем ответ
+        response_data = {
+            'success': True
+        }
+
+        # Добавляем данные по каждой платформе
+        for platform, data in platforms_data.items():
+            latest_data = data.get('latest_data', {})
+            response_data[platform] = {
+                'count': latest_data.get('count', 0),
+                'timestamp': latest_data.get('timestamp', timezone.now().isoformat())
+            }
+
+        return JsonResponse(response_data)
+
+    except Exception as e:
+        logger.error(f"Ошибка при обновлении статистики: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
