@@ -12,10 +12,10 @@ import time
 from django.http import JsonResponse
 from django.utils import timezone
 
-# Настроим логгер
+# Настроим логгер для отслеживания ошибок и важных событий
 logger = logging.getLogger(__name__)
 
-# Константы
+# Константы для настройки приложения
 API_TIMEOUT = 5  # секунды
 API_BASE_URL = "http://194.35.119.49:8090"
 CACHE_TIMEOUT = 60 * 15  # 15 минут
@@ -24,13 +24,25 @@ def cache_api_response(timeout: int = CACHE_TIMEOUT):
     """
     Декоратор для кэширования ответов API.
     
+    Используется для оптимизации производительности путем сохранения
+    результатов API-запросов в кэше на определенное время.
+    
     Args:
-        timeout: Время жизни кэша в секундах
+        timeout (int): Время жизни кэша в секундах. По умолчанию 15 минут.
+    
+    Returns:
+        Callable: Декорированная функция, которая сначала проверяет кэш,
+                и только при отсутствии данных делает запрос к API.
+    
+    Example:
+        @cache_api_response(timeout=300)
+        def get_user_data(user_id):
+            return requests.get(f"/api/users/{user_id}")
     """
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            # Создаем ключ кэша на основе аргументов функции
+            # Создаем уникальный ключ кэша на основе аргументов функции
             cache_key = f"api_response_{func.__name__}_{str(args)}_{str(kwargs)}"
             
             # Пробуем получить данные из кэша
@@ -57,16 +69,26 @@ def fetch_api_data(url: str) -> Dict[str, Any]:
     """
     Безопасное получение данных от API с обработкой ошибок и кэшированием.
     
+    Выполняет HTTP GET запрос к указанному URL с настроенным таймаутом
+    и обработкой возможных ошибок.
+    
     Args:
-        url: URL для запроса
+        url (str): URL для запроса
         
     Returns:
-        Dict с данными от API
+        Dict[str, Any]: Словарь с данными от API
         
     Raises:
         RequestException: при ошибках сети
         Timeout: при превышении времени ожидания
         ValueError: при некорректном ответе
+    
+    Example:
+        try:
+            data = fetch_api_data("https://api.example.com/data")
+            process_data(data)
+        except RequestException as e:
+            handle_error(e)
     """
     try:
         response = requests.get(url, timeout=API_TIMEOUT)
@@ -83,19 +105,52 @@ def fetch_api_data(url: str) -> Dict[str, Any]:
         raise
 
 def validate_platform(platform: str) -> None:
-    """Проверяет корректность названия платформы."""
+    """
+    Проверяет корректность названия платформы.
+    
+    Args:
+        platform (str): Название платформы для проверки
+        
+    Raises:
+        ValidationError: если платформа не входит в список поддерживаемых
+    """
     valid_platforms = ["linkedin", "youtube", "medium", "instagram"]
     if platform.lower() not in valid_platforms:
         raise ValidationError(f"Недопустимая платформа: {platform}")
 
 def validate_profile_id(platform: str, profile_id: str) -> None:
-    """Проверяет корректность ID профиля для каждой платформы."""
+    """
+    Проверяет корректность ID профиля для каждой платформы.
+    
+    Args:
+        platform (str): Название платформы
+        profile_id (str): ID профиля для проверки
+        
+    Raises:
+        ValidationError: если ID профиля некорректен
+    """
     if not profile_id or not isinstance(profile_id, str):
         raise ValidationError(f"Некорректный ID профиля для {platform}")
 
 @cache_page(CACHE_TIMEOUT)
 def get_daily_statistics(request, platform: str) -> Any:
-    """Получение ежедневной статистики для указанной платформы."""
+    """
+    Получение ежедневной статистики для указанной платформы.
+    
+    Извлекает и обрабатывает статистические данные за день для заданной
+    социальной платформы. Поддерживает кэширование результатов.
+    
+    Args:
+        request: HTTP запрос
+        platform (str): Название платформы
+        
+    Returns:
+        HttpResponse: Отрендеренный шаблон с данными статистики
+        
+    Raises:
+        ValidationError: при некорректной платформе
+        RequestException: при ошибках API
+    """
     try:
         validate_platform(platform)
         
@@ -172,7 +227,22 @@ def get_daily_statistics(request, platform: str) -> Any:
 
 @cache_page(CACHE_TIMEOUT)
 def get_real_time_statistics(request) -> Any:
-    """Получение статистики в реальном времени для всех платформ."""
+    """
+    Получение статистики в реальном времени для всех платформ.
+    
+    Собирает текущие данные о подписчиках со всех поддерживаемых платформ
+    и отображает их на главной странице.
+    
+    Args:
+        request: HTTP запрос
+        
+    Returns:
+        HttpResponse: Отрендеренный шаблон с текущей статистикой
+        
+    Example:
+        При запросе главной страницы отображаются текущие показатели
+        подписчиков для LinkedIn, YouTube, Medium и Instagram.
+    """
     try:
         # Получаем данные для всех платформ
         platforms_data = {
@@ -199,7 +269,18 @@ def get_real_time_statistics(request) -> Any:
 
 @cache_page(CACHE_TIMEOUT)
 def get_analytics(request) -> Any:
-    """Получение аналитики по всем платформам."""
+    """
+    Получение аналитики по всем платформам.
+    
+    Собирает и анализирует данные о подписчиках со всех платформ,
+    подготавливает статистические показатели для страницы аналитики.
+    
+    Args:
+        request: HTTP запрос
+        
+    Returns:
+        HttpResponse: Отрендеренный шаблон с аналитическими данными
+    """
     try:
         # Получаем данные для всех платформ
         platforms_data = {
@@ -225,7 +306,27 @@ def get_analytics(request) -> Any:
         })
 
 def update_statistics(request):
-    """Обработчик для обновления статистики."""
+    """
+    Обработчик для обновления статистики через AJAX-запрос.
+    
+    Получает актуальные данные со всех платформ и возвращает их в формате JSON.
+    Используется для асинхронного обновления данных на странице.
+    
+    Args:
+        request: HTTP запрос
+        
+    Returns:
+        JsonResponse: Актуальные данные по всем платформам
+        
+    Example:
+        Ответ содержит структуру вида:
+        {
+            'success': True,
+            'linkedin': {'count': 1234, 'timestamp': '2024-04-24T08:59:00Z'},
+            'youtube': {'count': 5678, 'timestamp': '2024-04-24T08:59:00Z'},
+            ...
+        }
+    """
     try:
         # Получаем данные для всех платформ
         platforms_data = {
